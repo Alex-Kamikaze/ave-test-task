@@ -1,8 +1,8 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Path
 from app.storage.models import AddressPhoneData
-from app.api.deps.repository_dependency import provide_repository
-from app.repository.repo import Repository
+from app.api.deps.repository_dependency import provide_storage_service
+from app.services.storage_service import StorageService
 from app.exceptions.repository_exceptions import (
     PhoneNotFoundException,
     InsertionFailedException,
@@ -10,7 +10,7 @@ from app.exceptions.repository_exceptions import (
     DeletionFailedException,
     AddressAlreadyExistsException,
 )
-from app.api.models.models import AddressResponse
+from app.api.schemas.responses import AddressResponse
 
 router = APIRouter()
 
@@ -30,11 +30,11 @@ router = APIRouter()
     },
 )
 async def get_address(
-    repository: Annotated[Repository, Depends(provide_repository)],
+    service: Annotated[StorageService, Depends(provide_storage_service)],
     phone: str = Path(description="Номер телефона"),
 ):
     try:
-        address = repository.get_address_by_phone(phone)
+        address = service.get_address_by_phone(phone)
         return AddressResponse(address=address)
     except PhoneNotFoundException:
         raise HTTPException(status_code=404, detail="Номер телефона не найден")
@@ -63,10 +63,10 @@ async def get_address(
 )
 async def insert_address_phone(
     data: AddressPhoneData,
-    repository: Annotated[Repository, Depends(provide_repository)],
+    service: Annotated[StorageService, Depends(provide_storage_service)],
 ):
     try:
-        repository.insert_phone_address_info(data)
+        service.insert_phone_address_info(data)
         return {"detail": "Вставка успешна"}
     except AddressAlreadyExistsException:
         raise HTTPException(status_code=409, detail="Номер телефона уже существует")
@@ -97,10 +97,10 @@ async def insert_address_phone(
 )
 async def update_address_phone(
     data: AddressPhoneData,
-    repository: Annotated[Repository, Depends(provide_repository)],
+    service: Annotated[StorageService, Depends(provide_storage_service)],
 ):
     try:
-        repository.update_phone_address_info(data)
+        service.update_phone_address_info(data)
         return {"detail": "Обновление успешно"}
     except PhoneNotFoundException:
         raise HTTPException(status_code=404, detail="Номер телефона не найден")
@@ -130,11 +130,11 @@ async def update_address_phone(
     },
 )
 async def delete_address_phone(
-    repository: Annotated[Repository, Depends(provide_repository)],
+    service: Annotated[StorageService, Depends(provide_storage_service)],
     phone: str = Path(description="Номер телефона для удаления"),
 ):
     try:
-        repository.delete_phone_address_info(phone)
+        service.delete_phone_address_info(phone)
         return {"detail": "Удаление успешно"}
     except PhoneNotFoundException:
         raise HTTPException(status_code=404, detail="Номер телефона не найден")

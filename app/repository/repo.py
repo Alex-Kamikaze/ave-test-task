@@ -1,13 +1,6 @@
 from redis import Redis
 from app.core.settings import settings
 from app.storage.models import AddressPhoneData
-from app.exceptions.repository_exceptions import (
-    PhoneNotFoundException,
-    InsertionFailedException,
-    UpdateFailedException,
-    DeletionFailedException,
-    AddressAlreadyExistsException
-)
 
 
 class Repository:
@@ -18,8 +11,8 @@ class Repository:
         redis (Redis): Клиент Redis
     """
 
-    def __init__(self):
-        self.redis = Redis.from_url(str(settings.redis_url), decode_responses=True)
+    def __init__(self, redis_url: str = str(settings.redis_url)):
+        self.redis = Redis.from_url(redis_url, decode_responses=True)
 
     def get_address_by_phone(self, phone: str) -> str:
         """
@@ -30,63 +23,38 @@ class Repository:
 
         Returns:
             out (str): Адрес, связанный с номером телефона
-
-        Raises:
-            PhoneNotFoundException: Если номер телефона не найден в хранилище
         """
-        address = self.redis.get(phone)
-        if address is None:
-            raise PhoneNotFoundException()
-        return address
+        return self.redis.get(phone)
+    
 
-    def insert_phone_address_info(self, data: AddressPhoneData):
+    def check_phone_exists(self, phone: str) -> bool:
         """
-        Вставляет связку адрес-телефон в хранилище Redis
+        Проверяет существование номера телефона в хранилище Redis
+
+        Args:
+            phone (str): Номер телефона для проверки
+
+        Returns:
+            out (bool): True, если номер телефона существует, иначе False
+        """
+        return self.redis.exists(phone) == 1
+
+    def upsert_phone_address_info(self, data: AddressPhoneData):
+        """
+        Вставляет или обновляет связку адрес-телефон в хранилище Redis
+
         Args:
             data (AddressPhoneData): Данные адрес-телефон для вставки
-
-        Raises:
-            InsertionFailedException: Если вставка данных не удалась
         """
-        if self.redis.exists(data.phone):
-            raise AddressAlreadyExistsException()
-        result = self.redis.set(data.phone, data.address)
-        if not result:
-            raise InsertionFailedException()
-
-    def update_phone_address_info(self, data: AddressPhoneData):
-        """
-        Обновляет связку адрес-телефон в хранилище Redis
-
-        Args:
-            data (AddressPhoneData): Данные адрес-телефон для обновления
-
-        Raises:
-            PhoneNotFoundException: Если номер телефона не найден в хранилище
-            UpdateFailedException: Если обновление данных не удалось
-
-        """
-        if not self.redis.exists(data.phone):
-            raise PhoneNotFoundException()
-        result = self.redis.set(data.phone, data.address)
-        if not result:
-            raise UpdateFailedException()
+        self.redis.set(data.phone, data.address)
 
     def delete_phone_address_info(self, phone: str):
         """
         Удаляет связку адрес-телефон из хранилища Redis по номеру телефона
         Args:
             phone (str): Номер телефона для удаления
-
-        Raises:
-            PhoneNotFoundException: Если номер телефона не найден в хранилище
-            DeletionFailedException: Если удаление данных не удалось
         """
-        if not self.redis.exists(phone):
-            raise PhoneNotFoundException()
-        result = self.redis.delete(phone)
-        if not result:
-            raise DeletionFailedException()
+        self.redis.delete(phone)
         
     def __del__(self):
         self.redis.close()

@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 class AddressResponse(BaseModel):
     """
-    Ответ API, содержащий адрес и телефон
+    Ответ API, содержащий адрес
 
     Attributes:
         address (str): Адрес
