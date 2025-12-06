@@ -17,3 +17,7 @@ class DeletionFailedException(Exception):
 class AddressAlreadyExistsException(Exception):
     """Вызывается, когда адрес уже существует в Redis"""
     pass
+
+class PhoneNotValidException(Exception):
+    """Вызывается, когда номер телефона имеет неверный формат"""
+    pass

@@ -1,3 +1,4 @@
+import phonenumbers
 from app.repository.repo import Repository, repository_instance
 from app.storage.models import AddressPhoneData
 from app.exceptions.repository_exceptions import (
@@ -6,6 +7,7 @@ from app.exceptions.repository_exceptions import (
     UpdateFailedException,
     DeletionFailedException,
     AddressAlreadyExistsException,
+    PhoneNotValidException
 )
 
 
@@ -19,6 +21,30 @@ class StorageService:
 
     def __init__(self, repository: Repository = repository_instance):
         self.repository = repository
+    
+    def formalize_phone(self, phone: str) -> str:
+        """
+        Форматирует номер телефона в международный формат
+
+        Args:
+            phone (str): Номер телефона для форматирования
+
+        Returns:
+            out (str): Форматированный номер телефона
+
+        Raises:
+            PhoneNotValidException: Если номер телефона имеет неверный формат
+        """
+
+        try:
+            parsed_phone = phonenumbers.parse(phone, None)
+            if not phonenumbers.is_valid_number(parsed_phone):
+                raise PhoneNotValidException()
+            return phonenumbers.format_number(
+                parsed_phone, phonenumbers.PhoneNumberFormat.E164
+            )
+        except phonenumbers.NumberParseException:
+            raise PhoneNotValidException()
 
     def get_address_by_phone(self, phone: str) -> str:
         """
@@ -32,13 +58,15 @@ class StorageService:
 
         Raises:
             PhoneNotFoundException: Если номер телефона не найден в хранилище
+            PhoneNotValidException: Если номер телефона имеет неверный формат
         """
+        validated_phone = self.formalize_phone(phone)
 
-        phone = self.repository.get_address_by_phone(phone)
-        if not phone:
+        result = self.repository.get_address_by_phone(validated_phone)
+        if not result:
             raise PhoneNotFoundException()
 
-        return phone
+        return result
     
     def insert_phone_address_info(self, data: AddressPhoneData):
         """
@@ -50,12 +78,14 @@ class StorageService:
         Raises:
             AddressAlreadyExistsException: Если связка с таким телефоном уже существует
             InsertionFailedException: Если вставка данных не удалась
+            PhoneNotValidException: Если номер телефона имеет неверный формат
         """
+        validated_phone = self.formalize_phone(data.phone)
 
-        if self.repository.check_phone_exists(data.phone):
+        if self.repository.check_phone_exists(validated_phone):
             raise AddressAlreadyExistsException()
         try:
-            self.repository.upsert_phone_address_info(data)
+            self.repository.upsert_phone_address_info(AddressPhoneData(phone=validated_phone, address=data.address))
         except Exception:
             raise InsertionFailedException()
     
@@ -70,11 +100,12 @@ class StorageService:
             PhoneNotFoundException: Если номер телефона не найден в хранилище
             UpdateFailedException: Если обновление данных не удалось
         """
+        validated_phone = self.formalize_phone(data.phone)
 
-        if not self.repository.check_phone_exists(data.phone):
+        if not self.repository.check_phone_exists(validated_phone):
             raise PhoneNotFoundException()
         try:
-            self.repository.upsert_phone_address_info(data)
+            self.repository.upsert_phone_address_info(AddressPhoneData(phone=validated_phone, address=data.address))
         except Exception:
             raise UpdateFailedException()
         
@@ -89,10 +120,11 @@ class StorageService:
             PhoneNotFoundException: Если номер телефона не найден в хранилище
             DeletionFailedException: Если удаление данных не удалось
         """
+        validated_phone = self.formalize_phone(phone)
 
-        if not self.repository.check_phone_exists(phone):
+        if not self.repository.check_phone_exists(validated_phone):
             raise PhoneNotFoundException()
         try:
-            self.repository.delete_phone_address_info(phone)
+            self.repository.delete_phone_address_info(validated_phone)
         except Exception:
             raise DeletionFailedException()

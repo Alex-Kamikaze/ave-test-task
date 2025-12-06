@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
 from app.api.views.views import router as views_router
-from app.core.settings import settings
+from app.config.settings import settings
 
 app = FastAPI()
 app.include_router(views_router, prefix="/api")

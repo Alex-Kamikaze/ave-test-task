@@ -9,6 +9,7 @@ from app.exceptions.repository_exceptions import (
     UpdateFailedException,
     DeletionFailedException,
     AddressAlreadyExistsException,
+    PhoneNotValidException
 )
 from app.api.schemas.responses import AddressResponse
 
@@ -21,6 +22,12 @@ router = APIRouter()
     summary="Получить адрес по номеру телефона",
     description="Возвращает адрес по номеру телефона из хранилища Redis",
     responses={
+        400: {
+            "description": "Неверный формат номера телефона",
+            "content": {
+                "application/json": {"example": {"detail": "Неверный формат номера телефона"}}
+            }
+        },
         404: {
             "description": "Номер телефона не найден",
             "content": {
@@ -36,6 +43,8 @@ async def get_address(
     try:
         address = service.get_address_by_phone(phone)
         return AddressResponse(address=address)
+    except PhoneNotValidException:
+        raise HTTPException(status_code=400, detail="Неверный формат номера телефона")
     except PhoneNotFoundException:
         raise HTTPException(status_code=404, detail="Номер телефона не найден")
 
@@ -45,6 +54,12 @@ async def get_address(
     summary="Вставить связку адрес-телефон",
     description="Вставляет связку адрес-телефон в хранилище Redis",
     responses={
+        400: {
+            "description": "Неверный формат номера телефона",
+            "content": {
+                "application/json": {"example": {"detail": "Неверный формат номера телефона"}}
+            }
+        },
         409: {
             "description": "Номер телефона уже существует",
             "content": {
@@ -68,6 +83,8 @@ async def insert_address_phone(
     try:
         service.insert_phone_address_info(data)
         return {"detail": "Вставка успешна"}
+    except PhoneNotValidException:
+        raise HTTPException(status_code=400, detail="Неверный формат номера телефона")
     except AddressAlreadyExistsException:
         raise HTTPException(status_code=409, detail="Номер телефона уже существует")
     except InsertionFailedException:
@@ -79,6 +96,12 @@ async def insert_address_phone(
     summary="Обновить связку адрес-телефон",
     description="Обновляет связку адрес-телефон в хранилище Redis",
     responses={
+        400: {
+            "description": "Неверный формат номера телефона",
+            "content": {
+                "application/json": {"example": {"detail": "Неверный формат номера телефона"}}
+            }
+        },
         404: {
             "description": "Номер телефона не найден",
             "content": {
@@ -102,6 +125,8 @@ async def update_address_phone(
     try:
         service.update_phone_address_info(data)
         return {"detail": "Обновление успешно"}
+    except PhoneNotValidException:
+        raise HTTPException(status_code=400, detail="Неверный формат номера телефона")
     except PhoneNotFoundException:
         raise HTTPException(status_code=404, detail="Номер телефона не найден")
     except UpdateFailedException:
@@ -113,6 +138,12 @@ async def update_address_phone(
     summary="Удалить связку адрес-телефон",
     description="Удаляет связку адрес-телефон из хранилища Redis по номеру телефона",
     responses={
+        400: {
+            "description": "Неверный формат номера телефона",
+            "content": {
+                "application/json": {"example": {"detail": "Неверный формат номера телефона"}}
+            }
+        },
         404: {
             "description": "Номер телефона не найден",
             "content": {
@@ -136,6 +167,8 @@ async def delete_address_phone(
     try:
         service.delete_phone_address_info(phone)
         return {"detail": "Удаление успешно"}
+    except PhoneNotValidException:
+        raise HTTPException(status_code=400, detail="Неверный формат номера телефона")
     except PhoneNotFoundException:
         raise HTTPException(status_code=404, detail="Номер телефона не найден")
     except DeletionFailedException:

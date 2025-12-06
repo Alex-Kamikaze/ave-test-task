@@ -1,5 +1,5 @@
 from redis import Redis
-from app.core.settings import settings
+from app.config.settings import settings
 from app.storage.models import AddressPhoneData
 
 
