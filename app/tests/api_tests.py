@@ -34,7 +34,7 @@ def test_phone_retrieval(api_client):
     data = AddressPhoneDataFactory().model_dump()
     response = api_client.put("/api/insert", json=data)
     print(response.json())
-    assert response.status_code == 200
+    assert response.status_code == 201
     response = api_client.get(f"/api/get/{data['phone']}")
     assert response.status_code == 200
     assert response.json() == {"address": data["address"]}
@@ -47,7 +47,7 @@ def test_phone_retrieval_not_found(api_client):
 def test_phone_insertion(api_client):
     data = AddressPhoneDataFactory().model_dump()
     response = api_client.put("/api/insert", json=data)
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json() == {"detail": "Вставка успешна"}
 
 def test_phone_insertion_existing(api_client):
@@ -78,8 +78,7 @@ def test_delete_phone(api_client):
     data = AddressPhoneDataFactory().model_dump()
     api_client.put("/api/insert", json=data)
     response = api_client.delete(f"/api/delete/{data['phone']}")
-    assert response.status_code == 200
-    assert response.json() == {"detail": "Удаление успешно"}
+    assert response.status_code == 204
     get_response = api_client.get(f"/api/get/{data['phone']}")
     assert get_response.status_code == 404
 

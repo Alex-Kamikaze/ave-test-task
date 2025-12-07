@@ -75,6 +75,7 @@ async def get_address(
             },
         },
     },
+    status_code=201
 )
 async def insert_address_phone(
     data: AddressPhoneData,
@@ -117,6 +118,7 @@ async def insert_address_phone(
             },
         },
     },
+    status_code=200
 )
 async def update_address_phone(
     data: AddressPhoneData,
@@ -159,6 +161,7 @@ async def update_address_phone(
             },
         },
     },
+    status_code=204
 )
 async def delete_address_phone(
     service: Annotated[StorageService, Depends(provide_storage_service)],
@@ -166,7 +169,6 @@ async def delete_address_phone(
 ):
     try:
         service.delete_phone_address_info(phone)
-        return {"detail": "Удаление успешно"}
     except PhoneNotValidException:
         raise HTTPException(status_code=400, detail="Неверный формат номера телефона")
     except PhoneNotFoundException:
