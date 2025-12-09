@@ -21,5 +21,33 @@ services:
       start_period: 30s
     volumes:
       - redis-data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus_data/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl -f http://localhost:9090/-/ready || exit 1"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - 3000:3000
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    volumes:
+      - grafana_data:/var/lib/grafana
+
 volumes:
   redis-data:
+  grafana_data:

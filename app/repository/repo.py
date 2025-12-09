@@ -55,6 +55,15 @@ class Repository:
             phone (str): Номер телефона для удаления
         """
         self.redis.delete(phone)
+
+    def get_total_keys(self) -> int:
+        """
+        Возвращает общее количество ключей в хранилище Redis
+
+        Returns:
+            out (int): Общее количество ключей
+        """
+        return self.redis.dbsize()
         
     def __del__(self):
         self.redis.close()
